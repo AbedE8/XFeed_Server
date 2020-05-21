@@ -1,0 +1,6 @@
+xfeed-5b46c52f9017.json
+http://localhost:5001/xfeed-497fe/us-central1/getFeed?uid=K4IMPeFK2g2mupRSKWo0&category=[info]&latitude=5&longitude=0&distance=1
+
+deliver to git:
+	git commit -a -m 
+	git push origin master
