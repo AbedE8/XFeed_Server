@@ -6,7 +6,7 @@ import * as moment from 'moment';
 import * as admin from 'firebase-admin';
 
 
-const NUM_OF_POST_IN_CHUNK = 1;
+const NUM_OF_POST_IN_CHUNK = 4;
 const PRIOD_TIME_OF_LOCATION_POSTS = 60 //by minutes
 
 const geocollection: GeoCollectionReference = geofirestore.collection('geoLocation');
@@ -66,7 +66,7 @@ export const getFeedModule = function(req, res) {
         numOfPostsWithData = listOfPosts.length;
       }
       let result = {'num_of_posts':numOfPostsWithData, 'posts': feed};
-      console.log(JSON.stringify(result));
+      //console.log(JSON.stringify(result));
       res.status(200).send(JSON.stringify(result));
     }).catch(err => {
       console.log(err);
@@ -127,7 +127,7 @@ function sortByPublishedTime(postA, postB){
   } else if(postB == null) {
     return -1;
   } else {
-    if (postA.timeStamp < postB.timeStamp){
+    if (postA.data().timeStamp > postB.data().timeStamp){
       return -1
     };
     return 1;
@@ -216,7 +216,6 @@ function postLottery(postArr){
   });
 
   if (numOfTickets == 0){
-    console.log("no post to lottery.");
     //TODO: need to return without returning null
     return null;
   }

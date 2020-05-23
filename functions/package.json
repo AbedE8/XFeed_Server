@@ -29,7 +29,8 @@
     "geolocator": "^2.1.5",
     "lodash": "^4.17.15",
     "moment": "^2.25.3",
-    "node-gcm": "^1.0.2"
+    "node-gcm": "^1.0.2",
+    "remove-array-items": "^2.0.1"
   },
   "devDependencies": {
     "tslint": "^5.12.0",
