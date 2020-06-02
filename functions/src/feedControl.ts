@@ -1,12 +1,11 @@
 import { DBController } from "./DBApi"
-import { FCMcontroller } from "./FCMApi"
 import { GeoCollectionReference, GeoQuery, GeoQuerySnapshot } from 'geofirestore';
 import { geofirestore } from "./geoFire"
 import * as moment from 'moment';
 import * as admin from 'firebase-admin';
 
 
-const NUM_OF_POST_IN_CHUNK = 4;
+const NUM_OF_POST_IN_CHUNK = 1;
 const PRIOD_TIME_OF_LOCATION_POSTS = 60 //by minutes
 
 const geocollection: GeoCollectionReference = geofirestore.collection('geoLocation');
