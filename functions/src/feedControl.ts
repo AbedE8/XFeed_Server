@@ -18,8 +18,10 @@ export const getLocationFeedModule = function(req, res) {
     await getLocationFeedExec(reqFeatureName).then(listOfPosts => {
       let result = {'num_of_posts':NUM_OF_POST_IN_CHUNK, 'posts': listOfPosts};
       console.log(JSON.stringify(result));
-      res.send(JSON.stringify(result));
+      res.status(200).send(JSON.stringify(result));
     }).catch(err => {
+      console.log("2" + err);
+      
       res.status(404).send(err);
       });
   }
@@ -32,7 +34,11 @@ export const getLocationFeedModule = function(req, res) {
     return await GeoLocationDB.get().then(async function(locationSnapshot){
       if (locationSnapshot.size == 1){
         let locationPosts =  locationSnapshot.docs[0].data().d.posts;
-        return await createFeedWithFirstChunkOfPosts(locationPosts.sort(sortByPublishedTime), NUM_OF_POST_IN_CHUNK, false);
+        console.log("1");
+        
+        console.log(locationPosts);
+        
+        return await createFeedWithFirstChunkOfPosts(locationPosts.sort(sortDataByPublishedTime), NUM_OF_POST_IN_CHUNK, false);
         } else {
         throw new Error("num of locations with name " + featureName + "is " + locationSnapshot.size);
       }
@@ -127,6 +133,21 @@ function sortByPublishedTime(postA, postB){
     return -1;
   } else {
     if (postA.data().timeStamp > postB.data().timeStamp){
+      return -1
+    };
+    return 1;
+  }
+}
+//TODO: fix this shit!
+function sortDataByPublishedTime(postA, postB){
+  if (postA == null && postB == null){
+    return 0;
+  } else if(postA == null) {
+    return 1;
+  } else if(postB == null) {
+    return -1;
+  } else {
+    if (postA.timeStamp > postB.timeStamp){
       return -1
     };
     return 1;
