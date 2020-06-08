@@ -10,9 +10,14 @@ admin.initializeApp({
   databaseURL: 'https://xfeed-497fe.firebaseio.com'
 });
 
-export const notificationHandler = functions.firestore.document("/insta_a_feed/{userId}/items/{activityFeedItem}")
+export const activityNotificationHandler = functions.firestore.document("/insta_a_feed/{userId}/items/{activityFeedItem}")
     .onCreate(async (snapshot, context) => {
-      await notificationHandlerModule(snapshot, context);
+      await notificationHandlerModule(snapshot, context, 'activity');
+    });
+
+export const chatNotificationHandler = functions.firestore.document("/messages/{usersId}/items/{msgItem}")
+    .onCreate(async (snapshot, context) => {
+      await notificationHandlerModule(snapshot, context, 'chat');
     });
 
 export const getFeed = functions.https.onRequest((req, res) => {

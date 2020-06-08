@@ -1,22 +1,45 @@
 import * as admin from 'firebase-admin';
 
-export const notificationHandlerModule = async function (snapshot, context) {      
+export const notificationHandlerModule = async function (snapshot, context, type) {      
       console.log(snapshot.data())
+      let ownerDoc;
+      let ownerData;
+      let notificationToken;
 
-      const ownerDoc = admin.firestore().doc("users/" + context.params.userId)
-      const ownerData = await ownerDoc.get()
-
-      const notificationToken = ownerData.data()["notification_token"];
-      if (notificationToken) {
-        sendNotification(notificationToken, snapshot.data());
-      } else {
-        console.log("No token for User, not sending a notification");
-      }
-      
+      switch (type) {
+        case 'activity':
+          ownerDoc = admin.firestore().doc("users/" + context.params.userId)
+          ownerData = await ownerDoc.get()
+          notificationToken = ownerData.data()["notification_token"];
+          if(notificationToken) {
+            sendActivityNotification(notificationToken, snapshot.data());
+          }
+          else {
+            console.log("No token for User, not sending a notification");
+          }
+          break;
+        
+        case 'chat':
+          ownerDoc = admin.firestore().doc("users/" + snapshot.data()['idTo'])
+          ownerData = await ownerDoc.get()
+          notificationToken = ownerData.data()["notification_token"];
+          
+          if(notificationToken) {
+            sendChatNotification(notificationToken, snapshot.data());
+          }
+          else {
+            console.log("No token for User, not sending a notification");
+          }
+          break;
+        
+        default:
+          console.log(type + "not supported");
+          break;
+        }
       return 0;
     };
 
-function sendNotification(iosNotificationToken: string, activityItem: FirebaseFirestore.DocumentData) {
+function sendActivityNotification(notificationToken: string, activityItem: FirebaseFirestore.DocumentData) {
 
     let title: string;
     let body: string = "";
@@ -40,34 +63,38 @@ function sendNotification(iosNotificationToken: string, activityItem: FirebaseFi
           priority: "high",
         }
       };
-  
-    admin.messaging().sendToDevice(iosNotificationToken, message)
-    .then((response) => {
-      // Response is a message ID string.
-      console.log('Successfully sent message:', response);
-    })
-    .catch((error) => {
-      console.log('Error sending message:', error);
-    });
-  }
-
-/*var gcm = require('node-gcm');
-
-export const FCMcontroller = {
-	sendNotification: sendNotification
+      
+      sendNotification(notificationToken, message);
 }
 
-var sender = new gcm.Sender('AAAA65yPiaM:APA91bFHJjrU-kJbehpHFcWidPr7QEKHM-AE3Rph6UF1irHXGkJjkY3Mz1Zh8S5K0vaVfaSPLCVUoVcM1h2GZP_syKj_5KycZDZ_C8zKz1rbzUxUPzndJUGind6tPacIDglbL3VdQ82y');
-// Prepare a message to be sent
-var message = new gcm.Message({
-	data: { key1: 'msg1' }
-});
+function sendChatNotification(notificationToken: string, chatItem: FirebaseFirestore.DocumentData) {
+  let title: string;
+  let body: string = "";
 
-var regTokens = ['f-DKw_lcfUEGoaofMVPc0f:APA91bElq1buh136yORBixoKIIAX8pk3rkg1E3wILBz6sTHQqPHoTZPPdlq-tWZdwnOofBl3AXiM-mOkvNV5eQlvRB0regtqV2eSEl2qwY7IQ9Z1Izsic3j4LNWPpZaRip8MsXVXcP1U'];
+  title = "you have new message"
+  body = chatItem['fromUserName'] + " send you a message"
 
-function sendNotification() {
-	sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-		if (err) console.error(err);
-		else console.log(response);
-	});
-}*/
+  var message = {
+      notification: {
+        title: title,
+        body: body,
+        click_action:"FCM_PLUGIN_ACTIVITY",
+        sound: 'default',
+        badge: '1',
+        priority: "high",
+      }
+    };
+    
+    sendNotification(notificationToken, message);
+}
+
+function sendNotification(notificationToken, message){
+  admin.messaging().sendToDevice(notificationToken, message)
+  .then((response) => {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  })
+  .catch((error) => {
+    console.log('Error sending message:', error);
+  });
+}
