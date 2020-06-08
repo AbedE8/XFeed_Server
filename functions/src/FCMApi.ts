@@ -2,34 +2,21 @@ import * as admin from 'firebase-admin';
 
 export const notificationHandlerModule = async function (snapshot, context, type) {      
       console.log(snapshot.data())
-      let ownerDoc;
-      let ownerData;
       let notificationToken;
+
+      notificationToken = await getNotificationToken(snapshot, context, type);
+      if(!notificationToken){
+        console.log("cant get notification token");
+        return -1;
+      }
 
       switch (type) {
         case 'activity':
-          ownerDoc = admin.firestore().doc("users/" + context.params.userId)
-          ownerData = await ownerDoc.get()
-          notificationToken = ownerData.data()["notification_token"];
-          if(notificationToken) {
-            sendActivityNotification(notificationToken, snapshot.data());
-          }
-          else {
-            console.log("No token for User, not sending a notification");
-          }
+          sendActivityNotification(notificationToken, snapshot.data());
           break;
         
         case 'chat':
-          ownerDoc = admin.firestore().doc("users/" + snapshot.data()['idTo'])
-          ownerData = await ownerDoc.get()
-          notificationToken = ownerData.data()["notification_token"];
-          
-          if(notificationToken) {
-            sendChatNotification(notificationToken, snapshot.data());
-          }
-          else {
-            console.log("No token for User, not sending a notification");
-          }
+          sendChatNotification(notificationToken, snapshot.data());
           break;
         
         default:
@@ -97,4 +84,25 @@ function sendNotification(notificationToken, message){
   .catch((error) => {
     console.log('Error sending message:', error);
   });
+}
+
+async function getNotificationToken(snapshot, context, type){
+  let ownerDoc;
+  let ownerData;
+
+  switch (type) {
+    case 'activity':
+      ownerDoc = admin.firestore().doc("users/" + context.params.userId);
+      break;
+    
+    case 'chat':
+      ownerDoc = admin.firestore().doc("users/" + snapshot.data()['idTo']);
+      break;
+
+    default:
+      break;
+  }
+  ownerData = await ownerDoc.get();
+
+  return ownerData.data()["notification_token"];
 }
