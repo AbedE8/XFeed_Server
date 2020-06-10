@@ -10,7 +10,7 @@ admin.initializeApp({
   databaseURL: 'https://xfeed-497fe.firebaseio.com'
 });
 
-export const activityNotificationHandler = functions.firestore.document("/insta_a_feed/{userId}/items/{activityFeedItem}")
+export const activityNotificationHandler = functions.firestore.document("/activities/{userId}/items/{activityFeedItem}")
     .onCreate(async (snapshot, context) => {
       await notificationHandlerModule(snapshot, context, 'activity');
     });
