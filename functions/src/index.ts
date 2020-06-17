@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getFeedModule, getLocationFeedModule } from "./feedControl"
 import { uploadPostModule } from "./uploadPost"
 var serviceAccount = require('../xfeed-497fe-firebase-adminsdk-wjgq3-df2a207afc.json');
-import { notificationHandlerModule } from "./FCMApi"
+import { notificationHandlerModule, userArrivedLocation } from "./FCMApi"
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -20,6 +20,10 @@ export const chatNotificationHandler = functions.firestore.document("/messages/{
       await notificationHandlerModule(snapshot, context, 'chat');
     });
 
+export const userArriveToLocation = functions.https.onRequest((req, res) => {
+  userArrivedLocation(req, res);
+})
+
 export const getFeed = functions.https.onRequest((req, res) => {
   getFeedModule(req, res);
 })
@@ -31,6 +35,3 @@ export const uploadPost = functions.https.onRequest((req, res) => {
 export const getLocationFeed = functions.https.onRequest((req, res) => {
   getLocationFeedModule(req, res);
 })
-
-
-
