@@ -178,7 +178,7 @@ async function isPostMeetsThePreferences(userPostPref, post){
       post.max_age >= userAge &&
       post.publisher != user_id &&
       post.distribution > post.views &&
-      post.genders.includes(publisher.gender)
+      post.genders.includes(user.gender)
       ){
         res = true;
       }
