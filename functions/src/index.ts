@@ -4,10 +4,12 @@ import { getFeedModule, getLocationFeedModule } from "./feedControl"
 import { uploadPostModule } from "./uploadPost"
 var serviceAccount = require('../xfeed-497fe-firebase-adminsdk-wjgq3-df2a207afc.json');
 import { notificationHandlerModule, userArrivedLocation } from "./FCMApi"
+import { deletePostModule } from './deletePost';
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://xfeed-497fe.firebaseio.com'
+  databaseURL: 'https://xfeed-497fe.firebaseio.com',
+  storageBucket: 'gs://xfeed-497fe.appspot.com'
 });
 
 export const activityNotificationHandler = functions.firestore.document("/activities/{userId}/items/{activityFeedItem}")
@@ -34,4 +36,8 @@ export const uploadPost = functions.https.onRequest((req, res) => {
 
 export const getLocationFeed = functions.https.onRequest((req, res) => {
   getLocationFeedModule(req, res);
+})
+
+export const deletePost = functions.https.onRequest((req, res) => {
+  deletePostModule(req, res);
 })

@@ -170,7 +170,11 @@ async function isPostMeetsThePreferences(userPostPref, post){
       console.log("max age: " + (userPostPref.max_age));
       console.log("min age: " + (userPostPref.min_age));
       console.log("");*/
-
+      if(post.category.includes("info")){
+        console.log(post.genders);
+        console.log(user.gender);
+        
+      }
       if (userPostPref.categories.some(r => post.category.includes(r)) &&
       publisherAge <= userPostPref.max_age &&
       publisherAge >= userPostPref.min_age &&
@@ -182,6 +186,7 @@ async function isPostMeetsThePreferences(userPostPref, post){
       ){
         res = true;
       }
+      
       return res;
     })
   });

@@ -30,8 +30,8 @@ export const uploadPostModule = function(req, res) {
 			await insertNewPost(uid, categories, description, img_url, timeStamp, feature_name, genders, minAgeForDistribution, maxAgeForDistribution).then(async function(newPostRef){
 				if (querySnapshot.size == 1){
 					// location exist. add the new post to the location.
-					await querySnapshot.docs[0].ref.set({d:{posts:admin.firestore.FieldValue.arrayUnion({ id: newPostRef.id,
-																																																timeStamp: timeStamp})}}, {merge:true});
+					await querySnapshot.docs[0].ref.set({d:{posts:admin.firestore.FieldValue.arrayUnion({id: newPostRef.id,
+																										 timeStamp: timeStamp})}}, {merge:true});
 				} else if (querySnapshot.size == 0){
 					// add new location with the new post.
 					await geocollection.add({
