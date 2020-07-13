@@ -41,3 +41,4 @@ export const getLocationFeed = functions.https.onRequest((req, res) => {
 export const deletePost = functions.https.onRequest((req, res) => {
   deletePostModule(req, res);
 })
+

@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { CreditMgr } from './CreditMgr';
 
 export const notificationHandlerModule = async function (snapshot, context, type) {  
   let notificationToken;
@@ -138,8 +139,13 @@ async function getNotificationToken(snapshot, context, type){
 
 export const userArrivedLocation = function(req, res) {
   async function run() {
-    console.log(req.body);
+    const publisherId = String(req.body.publisherId);
+    const userId = String(req.body.userId);
     
+    if (publisherId != userId) {
+      CreditMgr.giveCreditToUser(publisherId, userId).then().catch();
+    }
+
     await getNotificationToken(req, null, 'arrivedLocation').then((notificationToken) => {
       if(!notificationToken){
         console.log("cant get notification token");
