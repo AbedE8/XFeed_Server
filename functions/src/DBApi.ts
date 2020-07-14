@@ -6,7 +6,8 @@ export const DBController = {
 	incrementDocField: incrementDocField,
 	deleteDoc: deleteDoc,
 	deleteImgFromStorage: deleteImgFromStorage,
-	deletePostFromActivity: deletePostFromActivity
+	deletePostFromActivity: deletePostFromActivity,
+	getFieldFromDocId: getFieldFromDocId
 }
 
 async function insertDocumentToCollection(collectionName, documentToAdd, msg){
@@ -24,12 +25,15 @@ async function getDocByUid(uid, collectionName) {
 	return await admin.firestore().collection(collectionName).doc(uid).get();
 }
 
+async function getFieldFromDocId(docId, collectionName, fieldNmae) {
+	return await (await admin.firestore().collection(collectionName).doc(docId).get()).data()[fieldNmae];
+}
+
 function incrementDocField(collectionName, docId, field, amount){
 	const increment = admin.firestore.FieldValue.increment(amount);
 	let obj = {};
 	obj[field] = increment;
 	admin.firestore().collection(collectionName).doc(docId).update(obj).then().catch(err => {console.log(err);});
-
 }
 
 async function deleteDoc(id, collectionName){

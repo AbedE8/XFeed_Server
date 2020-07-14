@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import { CreditMgr } from './CreditMgr';
+import { DBController } from './DBApi';
 
 export const notificationHandlerModule = async function (snapshot, context, type) {  
   let notificationToken;
@@ -124,9 +125,13 @@ async function getNotificationToken(snapshot, context, type){
       break;
 
     case 'arrivedLocation':
-      const userId = String(snapshot.body.userId);
+      let userId = String(snapshot.body.userId);
       console.log(userId);
       ownerDoc = admin.firestore().doc("users/" + userId);
+      break;
+    
+    case 'incCredit':
+      ownerDoc = admin.firestore().doc("users/" + snapshot);
       break;
     
     default:
@@ -137,7 +142,34 @@ async function getNotificationToken(snapshot, context, type){
   return ownerData.data()["notification_token"];
 }
 
-export const userArrivedLocation = function(req, res) {
+async function sendNotificationCreditInc(UidToSend, UidSendBy){
+  let title: string;
+  let body: string = "";
+  let UserNameSendBy = await DBController.getDocByUid(UidSendBy, 'users').then(userRef => {
+    return userRef.data().username;
+  });
+  getNotificationToken(UidToSend, null, 'incCredit').then(notificationToken => {
+    console.log(notificationToken);
+
+    title = "You earn a new credit";
+    body = UserNameSendBy + " is arrived to location from your post.";
+  
+    var message = {
+        notification: {
+          title: title,
+          body: body,
+          click_action:"FCM_PLUGIN_ACTIVITY",
+          sound: 'default',
+          badge: '1',
+          priority: "high",
+        }
+      };
+  
+    sendNotification(notificationToken, message);
+  }).catch();
+}
+
+const userArrivedLocation = function(req, res) {
   async function run() {
     const publisherId = String(req.body.publisherId);
     const userId = String(req.body.userId);
@@ -158,4 +190,9 @@ export const userArrivedLocation = function(req, res) {
   }
 
   run().then().catch();;
+}
+
+export const FCMService = {
+  sendNotificationCreditInc: sendNotificationCreditInc,
+  userArrivedLocation: userArrivedLocation
 }
