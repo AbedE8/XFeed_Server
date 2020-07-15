@@ -150,7 +150,7 @@ async function sendNotificationCreditInc(UidToSend, UidSendBy){
   });
   getNotificationToken(UidToSend, null, 'incCredit').then(notificationToken => {
     console.log(notificationToken);
-
+    /* TODO: be able to show the post.*/
     title = "You earn a new credit";
     body = UserNameSendBy + " is arrived to location from your post.";
   

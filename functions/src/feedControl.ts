@@ -3,6 +3,7 @@ import { GeoCollectionReference, GeoQuery, GeoQuerySnapshot } from 'geofirestore
 import { geofirestore } from "./geoFire"
 import * as moment from 'moment';
 import * as admin from 'firebase-admin';
+import { QueryDocumentSnapshot, DocumentSnapshot } from "@google-cloud/firestore";
 
 
 const NUM_OF_POST_IN_CHUNK = 1;
@@ -12,7 +13,6 @@ enum FeedMode {
   FAVORITE
 }
 
-const geocollection: GeoCollectionReference = geofirestore.collection('geoLocation');
 let user_id;
 
 export const getLocationFeedModule = function(req, res) {
@@ -67,55 +67,59 @@ export const getFeedModule = function(req, res) {
   user_id = String(req.query.uid);
   let feedMode = FeedMode[String(req.query.feedMode)];
 
-  async function compileFeedPost() {
-      switch (feedMode) {
-        case FeedMode.EXPLORE: 
-          await getAllPostsByUserPref(user_id).then(listOfPosts => {
-            let numOfPostsWithData = NUM_OF_POST_IN_CHUNK;
-            let feed = [].concat.apply([], listOfPosts); // flattens list.
-      
-            if(listOfPosts.length < NUM_OF_POST_IN_CHUNK){
-              numOfPostsWithData = listOfPosts.length;
-            }
-            let result = {'num_of_posts':numOfPostsWithData, 'posts': feed};
-            //console.log(JSON.stringify(result));
-            res.status(200).send(JSON.stringify(result));
-          }).catch(err => {
-            console.log(err);
-            res.status(404).send(err);
+  async function getAllPostsByUserPref(uid) {
+    //IMPORTENT!!!! user uid == user post preferences uid
+    let promises = await DBController.getDocByUid(uid, "post_preferences").then(async userPostPrefSnap => {
+      let userPostPref = userPostPrefSnap.data();
+      return await getlocationsWithinRadius(userPostPref.location, userPostPref.radius, feedMode).then(async locations => {
+        switch (feedMode) {
+          case FeedMode.FAVORITE:
+            /* need to convert the doc from the following to be the docs from geLocation since the following places data id not updated.*/
+            return locations.map(async location => {
+              let geoLocation = await DBController.getDocByUid(location.id, "geoLocation");
+              return getPostFromLocation(await geoLocation.data().d.posts, userPostPref);
+            })
+          case FeedMode.EXPLORE:
+            return locations.map(async location => { 
+              let locationPosts = location.data().posts;
+              return getPostFromLocation(locationPosts, userPostPref);
             });
-          break;
-        case FeedMode.FAVORITE:
-          res.status(200).send("not implimented yet");
-          break;
-        default:
-          break;
-      }
-    }
-    compileFeedPost().then().catch();
-    //async function test() {FCMcontroller.sendNotification(); }
-    //test().then().catch();
+          default:
+            console.log(feedMode + "is not supported");
+            return [];
+        }
+      })
+    });
+  
+    return await Promise.all(promises).then(async postArr => {
+      return await createFeedWithFirstChunkOfPosts(postArr.sort(sortByPublishedTime), NUM_OF_POST_IN_CHUNK, true);
+    }).catch(err => {
+      console.log(err);
+      return [];
+    });
   }
 
-async function getAllPostsByUserPref(uid) {
-  //IMPORTENT!!!! user uid == user post preferences uid
-  let promises = await DBController.getDocByUid(uid, "post_preferences").then(async userPostPrefSnap => {
-    let userPostPref = userPostPrefSnap.data();
-    return await getlocationsWithinRadius(userPostPref.location, userPostPref.radius).then(async locations => {
-      return locations.map(async location => {    
-        let locationPosts = location.data().posts;
-        return getPostFromLocation(locationPosts, userPostPref);
-      });
-    })
-  });
+  async function compileFeedPost() {
+    await getAllPostsByUserPref(user_id).then(listOfPosts => {
+      let numOfPostsWithData = NUM_OF_POST_IN_CHUNK;
+      let feed = [].concat.apply([], listOfPosts); // flattens list.
 
-  return await Promise.all(promises).then(async postArr => {
-    return await createFeedWithFirstChunkOfPosts(postArr.sort(sortByPublishedTime), NUM_OF_POST_IN_CHUNK, true);
-  }).catch(err => {
-    console.log(err);
-    return [];
-  });
-}
+      if(listOfPosts.length < NUM_OF_POST_IN_CHUNK){
+        numOfPostsWithData = listOfPosts.length;
+      }
+      let result = {'num_of_posts':numOfPostsWithData, 'posts': feed};
+      //console.log(JSON.stringify(result));
+      res.status(200).send(JSON.stringify(result));
+    }).catch(err => {
+      console.log(err);
+      res.status(404).send(err);
+      });
+  }
+
+  compileFeedPost().then().catch();
+  //async function test() {FCMcontroller.sendNotification(); }
+  //test().then().catch();
+  }
 
 async function createFeedWithFirstChunkOfPosts(postArr, I_numOfPostsWithData, toIncView){
   let numOfPostsWithData = I_numOfPostsWithData
@@ -182,12 +186,12 @@ async function isPostMeetsThePreferences(userPostPref, post){
       console.log("publisher.gender: " + publisher.gender);
       console.log("max age: " + (userPostPref.max_age));
       console.log("min age: " + (userPostPref.min_age));
-      console.log("");*/
+      console.log("");
       if(post.category.includes("info")){
         console.log(post.genders);
         console.log(user.gender);
         
-      }
+      }*/
       if (userPostPref.categories.some(r => post.category.includes(r)) &&
       publisherAge <= userPostPref.max_age &&
       publisherAge >= userPostPref.min_age &&
@@ -205,10 +209,21 @@ async function isPostMeetsThePreferences(userPostPref, post){
   });
 }
 
-async function getlocationsWithinRadius(location, radius){ 
-  const query: GeoQuery = geocollection.near({ center: location, radius: radius});
-  return query.get().then((value: GeoQuerySnapshot) => {    
-    return value.docs;
+async function getlocationsWithinRadius(location, radius, feedMode: FeedMode){ 
+  var geoCollection: GeoCollectionReference;
+
+  switch (feedMode) {
+    case FeedMode.EXPLORE:
+      geoCollection = geofirestore.collection('geoLocation');
+      break;
+    case FeedMode.FAVORITE:
+      geoCollection = await geofirestore.collection('activities').doc(user_id).collection("followingPlaces");
+      break;
+  }
+
+  const query: GeoQuery = geoCollection.near({ center: location, radius: radius});
+  return query.get().then(async (value: GeoQuerySnapshot) => {
+        return value.docs;
   });
 }
 
