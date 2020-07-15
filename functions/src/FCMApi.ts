@@ -130,7 +130,7 @@ async function getNotificationToken(snapshot, context, type){
       ownerDoc = admin.firestore().doc("users/" + userId);
       break;
     
-    case 'incCredit':
+    case 'toCredit':
       ownerDoc = admin.firestore().doc("users/" + snapshot);
       break;
     
@@ -148,7 +148,7 @@ async function sendNotificationCreditInc(UidToSend, UidSendBy){
   let UserNameSendBy = await DBController.getDocByUid(UidSendBy, 'users').then(userRef => {
     return userRef.data().username;
   });
-  getNotificationToken(UidToSend, null, 'incCredit').then(notificationToken => {
+  getNotificationToken(UidToSend, null, 'toCredit').then(notificationToken => {
     console.log(notificationToken);
     /* TODO: be able to show the post.*/
     title = "You earn a new credit";
@@ -192,7 +192,32 @@ const userArrivedLocation = function(req, res) {
   run().then().catch();;
 }
 
+async function sendNotificationLevelUp(Uid, newLevel, newDist){
+  let title: string;
+  let body: string = "";
+
+  getNotificationToken(Uid, null, 'toCredit').then(notificationToken => {
+    console.log(notificationToken);
+    title = "Congratulations! Your level was upgrade";
+    body = "you have been promoted to " + newLevel + " level, from now your distribution will be " + newDist;
+  
+    var message = {
+        notification: {
+          title: title,
+          body: body,
+          click_action:"FCM_PLUGIN_ACTIVITY",
+          sound: 'default',
+          badge: '1',
+          priority: "high",
+        }
+      };
+  
+    sendNotification(notificationToken, message);
+  }).catch();
+}
+
 export const FCMService = {
   sendNotificationCreditInc: sendNotificationCreditInc,
-  userArrivedLocation: userArrivedLocation
+  userArrivedLocation: userArrivedLocation,
+  sendNotificationLevelUp: sendNotificationLevelUp
 }

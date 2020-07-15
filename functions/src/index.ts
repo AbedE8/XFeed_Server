@@ -45,10 +45,10 @@ export const deletePost = functions.https.onRequest((req, res) => {
 
 /*---------------------------------------- only for test ------------------------------------------*/
 
-// export const giveCreditToUser = functions.https.onRequest((req, res) => {
-//   let rId = String(req.query.rId);
-//   let sId = String(req.query.sId);
-//   CreditMgr.giveCreditToUser(rId, sId);
-//   res.status(200).send();
-// })
+ export const giveCreditToUser = functions.https.onRequest((req, res) => {
+  let rId = String(req.query.rId);
+  let sId = String(req.query.sId);
+  CreditMgr.giveCreditToUser(rId, sId).catch(err => {console.log(err);});
+  res.status(200).send();
+})
 

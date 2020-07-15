@@ -7,7 +7,8 @@ export const DBController = {
 	deleteDoc: deleteDoc,
 	deleteImgFromStorage: deleteImgFromStorage,
 	deletePostFromActivity: deletePostFromActivity,
-	getFieldFromDocId: getFieldFromDocId
+	getFieldFromDocId: getFieldFromDocId,
+	updateFieldOnDocId: updateFieldOnDocId
 }
 
 async function insertDocumentToCollection(collectionName, documentToAdd, msg){
@@ -25,8 +26,14 @@ async function getDocByUid(uid, collectionName) {
 	return await admin.firestore().collection(collectionName).doc(uid).get();
 }
 
-async function getFieldFromDocId(docId, collectionName, fieldNmae) {
-	return await (await admin.firestore().collection(collectionName).doc(docId).get()).data()[fieldNmae];
+async function getFieldFromDocId(docId, collectionName, fieldName) {
+	return await (await admin.firestore().collection(collectionName).doc(docId).get()).data()[fieldName];
+}
+
+async function updateFieldOnDocId(docId, collectionName, fieldName, newVal) {
+	let obj = {};
+	obj[fieldName] = newVal;
+	return await (await admin.firestore().collection(collectionName).doc(docId).update(obj).then().catch(err => {console.log(err);}));
 }
 
 function incrementDocField(collectionName, docId, field, amount){
